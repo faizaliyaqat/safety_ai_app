@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SAFE - Women Safety AI</title>
+  <link rel="stylesheet" href="main.css">
+</head>
+<body>
+  <div class="phone-frame">
+    <div class="phone-screen">
+      <div class="status-bar">
+        <span id="phone-time">9:41</span>
+        <div class="notch"></div>
+        <span>5G 100%</span>
+      </div>
+
+      <h1>SAFE - Women Safety AI</h1>
+
+      <section class="sos-section">
+        <button id="sos-button" class="sos-button">SOS</button>
+      </section>
+
+      <section class="card">
+        <h2>Transcript</h2>
+        <p id="transcript-text">Tap SOS to start listening...</p>
+      </section>
+
+      <section class="card">
+        <h2>Distress Detection</h2>
+        <p id="distress-status">No distress keywords detected yet.</p>
+        <p id="distress-count">Total matches: 0</p>
+        <p id="repeat-status">Repeated phrases: none</p>
+      </section>
+
+      <section class="card">
+        <h2>Danger Score</h2>
+        <p id="danger-score" class="score">0%</p>
+        <p id="danger-status" class="danger-status safe">Safe</p>
+        <p id="ai-prediction" class="danger-status safe">AI Prediction: SAFE (0%)</p>
+      </section>
+
+      <section id="hidden-alert-card" class="card hidden-alert-card">
+        <h2>Hidden Alert</h2>
+        <p id="hidden-alert-text">Emergency alert ready to trigger silently.</p>
+        <p id="sms-status"></p>
+      </section>
+
+      <section class="card small-card">
+        <h2>Emergency Tracking</h2>
+        <p id="tracking-status">Location has not been shared yet.</p>
+        <p id="location-text">Location not fetched yet.</p>
+        <iframe
+          id="location-map"
+          title="Location Map"
+          style="display: none;"
+          loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade">
+        </iframe>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    function updatePhoneTime() {
+      const timeElement = document.getElementById("phone-time");
+      const now = new Date();
+
+      timeElement.textContent = now.toLocaleTimeString([], {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: false
+      });
+    }
+
+    updatePhoneTime();
+    setInterval(updatePhoneTime, 1000);
+
+    const sosButton = document.getElementById("sos-button");
+    const transcriptText = document.getElementById("transcript-text");
+    const trackingStatus = document.getElementById("tracking-status");
+    const locationText = document.getElementById("location-text");
+    const locationMap = document.getElementById("location-map");
+    const distressStatus = document.getElementById("distress-status");
+    const distressCount = document.getElementById("distress-count");
+    const repeatStatus = document.getElementById("repeat-status");
+    const dangerScoreText = document.getElementById("danger-score");
+    const dangerStatusText = document.getElementById("danger-status");
+    const aiPredictionText = document.getElementById("ai-prediction");
+    const hiddenAlertCard = document.getElementById("hidden-alert-card");
+    const hiddenAlertText = document.getElementById("hidden-alert-text");
+    const smsStatus = document.getElementById("sms-status");
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    const distressKeywords = [
+      "help", "help me", "save me", "emergency", "sos", "danger", "in danger",
+      "i am in danger", "unsafe", "not safe", "i'm not safe", "i’m not safe",
+      "risk", "threat", "life threat", "urgent help", "need help now", "please help",
+      "someone help", "get me out", "i'm trapped", "i’m trapped", "trapped", "stuck",
+      "i'm stuck", "i’m stuck", "call police", "call the police", "call ambulance",
+      "call for help", "alert", "panic", "panic help", "i'm scared", "i’m scared",
+      "scared", "very scared", "terrified", "fear", "i'm terrified", "i’m terrified",
+      "i feel unsafe", "something is wrong", "something feels wrong", "i don't feel safe",
+      "i don’t feel safe", "i don't feel okay", "i don’t feel okay",
+      "i think something bad will happen", "i'm panicking", "i’m panicking",
+      "panic attack", "i can't breathe", "i can’t breathe", "can't breathe",
+      "can’t breathe", "breathing problem", "my heart is racing", "heart racing",
+      "i feel dizzy", "dizzy", "i'm freaking out", "i’m freaking out", "freak out",
+      "anxiety", "severe anxiety", "someone is following me", "being followed",
+      "i'm being followed", "i’m being followed", "followed", "someone is watching me",
+      "being watched", "stranger nearby", "suspicious person", "someone is outside",
+      "intruder", "break in", "someone broke in", "i hear noises", "someone chasing me",
+      "they are chasing me", "chased", "i'm locked in", "i’m locked in", "locked",
+      "door won't open", "door won’t open", "can't get out", "can’t get out",
+      "kidnap", "kidnapped", "kidnapping", "being kidnapped", "abduct", "abducted",
+      "abduction", "don't touch me", "don’t touch me", "leave me alone", "stop it",
+      "get away", "stay away", "he's grabbing me", "he’s grabbing me",
+      "someone grabbed me", "grabbed", "assault", "attacked", "being attacked",
+      "harassment", "harassed", "molest", "molested", "he's not stopping",
+      "he’s not stopping", "they are bothering me", "i feel uncomfortable",
+      "unsafe situation", "i can't handle this", "i can’t handle this", "overwhelmed",
+      "i feel overwhelmed", "i want to cry", "crying", "breakdown",
+      "i'm breaking down", "i’m breaking down", "i feel helpless", "helpless",
+      "i don't know what to do", "i don’t know what to do", "i feel trapped",
+      "i can't take this anymore", "i can’t take this anymore", "everything is too much",
+      "i'm hurt", "i’m hurt", "hurt", "injured", "injury", "bleeding",
+      "i'm bleeding", "i’m bleeding", "blood", "i can't move", "i can’t move",
+      "can't move", "can’t move", "i fell down", "fall", "unconscious", "passed out",
+      "i need a doctor", "need doctor", "medical emergency", "i'm in pain",
+      "i’m in pain", "pain", "severe pain", "i feel weak", "weak",
+      "i think i'm dying", "i think i’m dying", "dying", "are you there",
+      "please respond", "respond please", "i need you", "something feels off",
+      "i don't feel right", "i don’t feel right", "can you stay with me",
+      "stay with me", "i'm not okay", "i’m not okay", "not okay", "i feel weird",
+      "weird feeling", "i'm alone", "i’m alone", "alone", "i don't like this",
+      "i don’t like this", "i forgot my keys", "battery is low", "come fast",
+      "come quickly", "where are you", "call me now", "call me immediately",
+      "i'm waiting outside", "i’m waiting outside", "hurry up", "hurry please",
+      "fast please", "shouting", "screaming", "crying loudly", "heavy breathing",
+      "trembling voice", "no no no", "stop stop stop", "help help help",
+      "please please please"
+    ];
+
+    let recognition = null;
+    let isListening = false;
+    let finalTranscript = "";
+    let latitude = null;
+    let longitude = null;
+    let lastAITranscript = "";
+    let lastAIAnalysis = { label: "safe", confidence: 0 };
+    let aiRequestInFlight = false;
+    let alertSent = false;
+
+    function escapeRegExp(text) {
+      return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    }
+
+    function normalizeText(text) {
+      return text.toLowerCase().replace(/[’]/g, "'");
+    }
+
+    function triggerDangerState() {
+      hiddenAlertCard.classList.add("active-alert");
+      hiddenAlertText.textContent = "🚨 DANGER DETECTED";
+
+      sosButton.classList.remove("active");
+      sosButton.classList.add("alert-mode");
+
+      if (isListening && recognition) {
+        recognition.stop();
+      }
+
+      sendEmergencySMS();
+    }
+
+    function resetDangerState() {
+      hiddenAlertCard.classList.remove("active-alert");
+      hiddenAlertText.textContent = "Emergency alert ready to trigger silently.";
+      sosButton.classList.remove("alert-mode");
+      smsStatus.textContent = "";
+      alertSent = false;
+    }
+
+    function updateDangerDisplay(score) {
+      dangerScoreText.textContent = `${score}%`;
+      dangerStatusText.className = "danger-status";
+
+      if (score > 70) {
+        dangerStatusText.textContent = "Danger";
+        dangerStatusText.classList.add("danger");
+        triggerDangerState();
+      } else if (score >= 30) {
+        dangerStatusText.textContent = "Warning";
+        dangerStatusText.classList.add("warning");
+        resetDangerState();
+      } else {
+        dangerStatusText.textContent = "Safe";
+        dangerStatusText.classList.add("safe");
+        resetDangerState();
+      }
+    }
+
+    function updateAIPredictionUI(label, confidence) {
+      aiPredictionText.className = "danger-status";
+
+      if (label === "danger") {
+        aiPredictionText.classList.add("danger");
+      } else if (label === "warning") {
+        aiPredictionText.classList.add("warning");
+      } else {
+        aiPredictionText.classList.add("safe");
+      }
+
+      aiPredictionText.textContent = `AI Prediction: ${label.toUpperCase()} (${confidence}%)`;
+    }
+
+    function getSignificantChangeRatio(oldText, newText) {
+      if (!oldText && newText) return 1;
+      if (!newText) return 0;
+
+      const oldWords = normalizeText(oldText).split(/\s+/).filter(Boolean);
+      const newWords = normalizeText(newText).split(/\s+/).filter(Boolean);
+
+      const diff = Math.abs(newWords.length - oldWords.length);
+      return diff / Math.max(newWords.length, 1);
+    }
+
+    async function getAIDistressAnalysis(text) {
+      try {
+        const normalized = normalizeText(text);
+        let label = "safe";
+        let confidence = 0;
+
+        const dangerPhrases = [
+          "save me", "help me", "call police", "call the police", "kidnapped",
+          "being attacked", "don't touch me", "dont touch me", "leave me alone",
+          "i'm in danger", "i am in danger", "someone is following me",
+          "can't breathe", "medical emergency", "i think i'm dying"
+        ];
+
+        const warningPhrases = [
+          "unsafe", "not safe", "panic", "scared", "terrified",
+          "something is wrong", "i feel unsafe", "i feel weird", "followed"
+        ];
+
+        const hasDanger = dangerPhrases.some((phrase) => normalized.includes(normalizeText(phrase)));
+        const hasWarning = warningPhrases.some((phrase) => normalized.includes(normalizeText(phrase)));
+
+        if (hasDanger) {
+          label = "danger";
+          confidence = 85;
+        } else if (hasWarning) {
+          label = "warning";
+          confidence = 55;
+        }
+
+        return { label, confidence };
+      } catch (error) {
+        return { label: "safe", confidence: 0 };
+      }
+    }
+
+    function applyHybridDangerScore(existingScore, aiConfidence) {
+      const finalScore = Math.min(100, Math.round((existingScore * 0.7) + (aiConfidence * 0.3)));
+      updateDangerDisplay(finalScore);
+    }
+
+    async function maybeRunAIAnalysis(transcript, existingScore) {
+      const trimmed = transcript.trim();
+
+      if (!trimmed) {
+        lastAIAnalysis = { label: "safe", confidence: 0 };
+        updateAIPredictionUI("safe", 0);
+        applyHybridDangerScore(existingScore, 0);
+        return;
+      }
+
+      const changeRatio = getSignificantChangeRatio(lastAITranscript, trimmed);
+
+      if (changeRatio < 0.25 && lastAITranscript) {
+        applyHybridDangerScore(existingScore, lastAIAnalysis.confidence);
+        return;
+      }
+
+      if (aiRequestInFlight) {
+        applyHybridDangerScore(existingScore, lastAIAnalysis.confidence);
+        return;
+      }
+
+      aiRequestInFlight = true;
+
+      try {
+        const result = await getAIDistressAnalysis(trimmed);
+        lastAITranscript = trimmed;
+        lastAIAnalysis = result;
+        updateAIPredictionUI(result.label, result.confidence);
+        applyHybridDangerScore(existingScore, result.confidence);
+      } catch (error) {
+        lastAIAnalysis = { label: "safe", confidence: 0 };
+        updateAIPredictionUI("safe", 0);
+        applyHybridDangerScore(existingScore, 0);
+      } finally {
+        aiRequestInFlight = false;
+      }
+    }
+
+    function analyzeDistress(transcript) {
+      const normalizedTranscript = normalizeText(transcript);
+      const foundKeywords = [];
+      const repeatedPhrases = [];
+      let totalMatches = 0;
+      let score = 0;
+
+      distressKeywords.forEach((keyword) => {
+        const normalizedKeyword = normalizeText(keyword);
+        const regex = new RegExp(escapeRegExp(normalizedKeyword), "gi");
+        const matches = normalizedTranscript.match(regex);
+
+        if (matches) {
+          foundKeywords.push(`${keyword} (${matches.length})`);
+          totalMatches += matches.length;
+          score += 30;
+
+          if (matches.length >= 2) {
+            repeatedPhrases.push(keyword);
+            score += 20;
+          }
+        }
+      });
+
+      score = Math.min(score, 100);
+
+      if (foundKeywords.length > 0) {
+        distressStatus.innerHTML = `Detected: <span class="alert-text">${foundKeywords.join(", ")}</span>`;
+      } else {
+        distressStatus.textContent = "No distress keywords detected yet.";
+      }
+
+      distressCount.textContent = `Total matches: ${totalMatches}`;
+      repeatStatus.textContent = repeatedPhrases.length
+        ? `Repeated phrases: ${repeatedPhrases.join(", ")}`
+        : "Repeated phrases: none";
+
+      maybeRunAIAnalysis(transcript, score);
+      return score;
+    }
+
+    function highlightDistressWords(transcript) {
+      let highlighted = transcript;
+
+      distressKeywords
+        .slice()
+        .sort((a, b) => b.length - a.length)
+        .forEach((keyword) => {
+          const pattern = keyword
+            .replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+            .replace(/['’]/g, "['’]");
+
+          const regex = new RegExp(`(${pattern})`, "gi");
+          highlighted = highlighted.replace(regex, '<span class="highlight-word">$1</span>');
+        });
+
+      return highlighted;
+    }
+
+    function renderTranscript(text) {
+      if (!text.trim()) {
+        transcriptText.textContent = "Listening...";
+        analyzeDistress("");
+        return;
+      }
+
+      transcriptText.innerHTML = highlightDistressWords(text);
+      analyzeDistress(text);
+    }
+
+    function fetchLocation() {
+      if (!navigator.geolocation) {
+        locationText.textContent = "Geolocation is not supported in this browser.";
+        trackingStatus.textContent = "Location could not be shared.";
+        locationMap.style.display = "none";
+        return;
+      }
+
+      locationText.textContent = "Fetching location...";
+      trackingStatus.textContent = "Tracking and sharing location...";
+
+      navigator.geolocation.getCurrentPosition(
+        function (position) {
+          latitude = position.coords.latitude;
+          longitude = position.coords.longitude;
+
+          locationText.textContent = `Lat: ${latitude.toFixed(6)}, Lng: ${longitude.toFixed(6)}`;
+          trackingStatus.textContent = "Location tracked and sent to emergency contacts.";
+
+          locationMap.src = `https://maps.google.com/maps?q=${latitude},${longitude}&z=15&output=embed`;
+          locationMap.style.display = "block";
+        },
+        function (error) {
+          locationText.textContent = "Unable to get location: " + error.message;
+          trackingStatus.textContent = "Location could not be shared with emergency contacts.";
+          locationMap.style.display = "none";
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        }
+      );
+    }
+
+    async function sendEmergencySMS() {
+      if (latitude == null || longitude == null || alertSent) {
+        return;
+      }
+
+      try {
+        const response = await fetch("http://127.0.0.1:5000/send-alert", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            latitude: latitude,
+            longitude: longitude
+          })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          smsStatus.textContent = "SMS sent successfully";
+          alertSent = true;
+        } else {
+          smsStatus.textContent = "SMS failed: " + (data.error || "Unknown error");
+        }
+      } catch (error) {
+        smsStatus.textContent = "SMS failed: backend not reachable";
+      }
+    }
+
+    if (SpeechRecognition) {
+      recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = "en-US";
+
+      recognition.onstart = function () {
+        isListening = true;
+        sosButton.classList.add("active");
+        transcriptText.textContent = "Listening...";
+      };
+
+      recognition.onresult = function (event) {
+        let interimTranscript = "";
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const text = event.results[i][0].transcript;
+
+          if (event.results[i].isFinal) {
+            finalTranscript += text + " ";
+          } else {
+            interimTranscript += text;
+          }
+        }
+
+        const combinedTranscript = (finalTranscript + interimTranscript).trim();
+        renderTranscript(combinedTranscript || "Listening...");
+      };
+
+      recognition.onend = function () {
+        isListening = false;
+        sosButton.classList.remove("active");
+
+        const finalText = finalTranscript.trim();
+        if (finalText) {
+          renderTranscript(finalText);
+        } else {
+          transcriptText.textContent = "Tap SOS to start listening...";
+          analyzeDistress("");
+        }
+      };
+
+      recognition.onerror = function (event) {
+        isListening = false;
+        sosButton.classList.remove("active");
+        transcriptText.textContent = "Speech error: " + event.error;
+      };
+
+      sosButton.addEventListener("click", function () {
+        if (!isListening) {
+          finalTranscript = "";
+          resetDangerState();
+          fetchLocation();
+          recognition.start();
+        } else {
+          recognition.stop();
+        }
+      });
+    } else {
+      sosButton.disabled = true;
+      transcriptText.textContent = "Speech recognition is not supported in this browser.";
+    }
+
+    updateDangerDisplay(0);
+    updateAIPredictionUI("safe", 0);
+  </script>
+</body>
+</html>

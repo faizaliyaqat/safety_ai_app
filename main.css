@@ -1,0 +1,215 @@
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background: #0a0f18;
+  font-family: Arial, sans-serif;
+  overflow: hidden;
+}
+
+.phone-frame {
+  width: 360px;
+  height: 760px;
+  padding: 10px;
+  border-radius: 42px;
+  background: #111;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+}
+
+.phone-screen {
+  width: 100%;
+  height: 100%;
+  border-radius: 34px;
+  padding: 14px 16px 18px;
+  box-sizing: border-box;
+  color: white;
+  background:
+    radial-gradient(circle at top, rgba(255, 0, 0, 0.18), transparent 30%),
+    linear-gradient(180deg, #0c1220 0%, #05070d 100%);
+  overflow-y: auto;
+}
+
+.status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  margin-bottom: 14px;
+  color: #f2f2f2;
+}
+
+.notch {
+  width: 110px;
+  height: 24px;
+  background: black;
+  border-radius: 20px;
+}
+
+h1 {
+  text-align: center;
+  font-size: 1.5rem;
+  margin: 8px 0 18px;
+}
+
+.sos-section {
+  display: grid;
+  place-items: center;
+  margin: 18px 0 20px;
+}
+
+.sos-button {
+  width: 145px;
+  height: 145px;
+  border: none;
+  border-radius: 50%;
+  background: red;
+  color: white;
+  font-size: 2rem;
+  font-weight: bold;
+  cursor: pointer;
+  animation: pulse 1.6s infinite;
+  box-shadow: 0 0 25px rgba(255, 0, 0, 0.5);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.sos-button.active {
+  background: #ff3b3b;
+  animation: activePulse 0.8s infinite;
+  box-shadow: 0 0 35px rgba(255, 50, 50, 0.95);
+}
+
+.card {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 18px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+}
+
+.small-card {
+  min-height: 170px;
+}
+
+.card h2 {
+  font-size: 1rem;
+  margin: 0 0 4px;
+  line-height: 1.2;
+}
+
+.card p {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.35;
+}
+
+.score {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #ff5c5c;
+  line-height: 1.1;
+}
+
+#tracking-status {
+  margin-bottom: 10px;
+  color: #d8e6f5;
+}
+
+#location-text {
+  margin-bottom: 8px;
+}
+
+#location-map {
+  width: 100%;
+  height: 120px;
+  border: 0;
+  border-radius: 14px;
+  margin-top: 8px;
+}
+
+#transcript-text {
+  white-space: pre-wrap;
+}
+
+.highlight-word {
+  color: #ff6b6b;
+  font-weight: bold;
+  background: rgba(255, 59, 59, 0.16);
+  padding: 1px 4px;
+  border-radius: 6px;
+}
+
+#distress-status,
+#distress-count,
+#repeat-status {
+  margin-top: 6px;
+}
+
+.alert-text {
+  color: #ff8080;
+  font-weight: bold;
+}
+
+.danger-status {
+  margin-top: 6px;
+  font-size: 0.95rem;
+  font-weight: bold;
+}
+
+.danger-status.safe {
+  color: #4ade80;
+}
+
+.danger-status.warning {
+  color: #facc15;
+}
+
+.danger-status.danger {
+  color: #ff6b6b;
+}
+
+.hidden-alert-card {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.3s ease;
+}
+
+.hidden-alert-card.active-alert {
+  background: rgba(255, 0, 0, 0.16);
+  border: 1px solid rgba(255, 80, 80, 0.7);
+  box-shadow: 0 0 20px rgba(255, 50, 50, 0.25);
+}
+
+.hidden-alert-card.active-alert h2,
+.hidden-alert-card.active-alert p {
+  color: #ff8a8a;
+}
+
+.sos-button.alert-mode {
+  background: #ff0000;
+  animation: alertPulse 0.45s infinite;
+  box-shadow: 0 0 40px rgba(255, 0, 0, 1);
+  transform: scale(1.08);
+}
+
+#sms-status {
+  margin-top: 8px;
+  font-size: 0.9rem;
+  color: #7cffb2;
+}
+
+@keyframes alertPulse {
+  0% { transform: scale(1.05); box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.95); }
+  50% { transform: scale(1.13); box-shadow: 0 0 0 20px rgba(255, 0, 0, 0.2); }
+  100% { transform: scale(1.05); box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); }
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.6); }
+  70% { transform: scale(1.05); box-shadow: 0 0 0 24px rgba(255, 0, 0, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); }
+}
+
+@keyframes activePulse {
+  0% { transform: scale(1.03); box-shadow: 0 0 0 0 rgba(255, 70, 70, 0.85); }
+  50% { transform: scale(1.1); box-shadow: 0 0 0 18px rgba(255, 70, 70, 0.12); }
+  100% { transform: scale(1.03); box-shadow: 0 0 0 0 rgba(255, 70, 70, 0); }
+}
